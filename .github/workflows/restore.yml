@@ -1,0 +1,32 @@
+name: Restaurar copia de seguridad
+
+on:
+  workflow_dispatch:
+    inputs:
+      fecha:
+        description: "Fecha de la copia (AAAA-MM-DD) o latest para la última"
+        required: true
+        default: latest
+      confirmar:
+        description: "Escribe RESTAURAR para cambiar los datos de verdad (si no, solo se simula)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: datos
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore.mjs
+        env:
+          FECHA: ${{ inputs.fecha }}
+          DRY_RUN: ${{ inputs.confirmar == 'RESTAURAR' && '0' || '1' }}

@@ -54,3 +54,17 @@ npx serve .
 ```
 
 Sin configurar Firebase, la app funciona igual, pero guarda los datos solo en tu navegador.
+
+## Copias de seguridad
+Cada noche (sobre las 00:00-01:00, hora de España) GitHub Actions guarda una copia de jugadores y partidos
+en la carpeta `backups/` de este repositorio: un archivo por día (`AAAA-MM-DD.json`, solo los días con cambios)
+y `latest.json` con la última. Solo el dueño del repositorio puede modificarlas, y el historial de git conserva
+todas las versiones aunque alguien borre datos en la app.
+
+- **Hacer una copia ahora:** pestaña *Actions* → *Copia de seguridad diaria* → *Run workflow*.
+- **Restaurar:** pestaña *Actions* → *Restaurar copia de seguridad* → *Run workflow*. Pon la fecha de la copia
+  (o `latest`). Si dejas *confirmar* vacío solo simula y te dice qué cambiaría; escribe `RESTAURAR` para aplicarlo.
+  La base de datos queda exactamente como en esa copia (se borra lo añadido después y se recupera lo borrado).
+
+GitHub desactiva las tareas programadas de un repositorio público tras 60 días sin actividad (te avisa por correo):
+si pasa, basta con volver a activarla desde la pestaña *Actions*.

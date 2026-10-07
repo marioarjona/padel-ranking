@@ -301,7 +301,7 @@ details.how ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; 
   </section>
 
   <section class="panel" id="p-historial" hidden>
-    <div><h2>Historial</h2><p class="sub">Si te equivocaste al apuntar, borra el partido y vuelve a meterlo: el ranking se recalcula entero.</p></div>
+    <div><h2>Historial</h2><p class="sub">Si te equivocaste al apuntar, borra el partido y vuelve a meterlo: el ranking se recalcula entero. Cada noche se guarda una copia de seguridad de todos los resultados.</p></div>
     <div id="historyBox" style="display:flex;flex-direction:column;gap:10px"></div>
   </section>
 
@@ -658,8 +658,8 @@ import { firebaseConfig } from "./firebase-config.js";
         ? `<span class="confirm">¿Borrar este partido? <button class="btn small danger" data-del-yes="${esc(m.id)}">Sí, borrar</button><button class="btn small ghost" data-del-no>No</button></span>`
         : `<button class="btn small ghost" data-del="${esc(m.id)}">Borrar</button>`;
       return `<div class="box match">
-        <div class="match-top"><span>${fmtDate(m.date)}</span>${del}</div>
-        <div class="match-teams">${team(m.a, won > lost, false)}<div class="setchips">${m.sets.map((s) => `<span>${s[0]}-${s[1]}</span>`).join("")}</div>${team(m.b, lost > won, true)}</div>
+        <div class="match-top"><span>${esc(fmtDate(m.date))}</span>${del}</div>
+        <div class="match-teams">${team(m.a, won > lost, false)}<div class="setchips">${m.sets.map((s) => `<span>${esc(s[0])}-${esc(s[1])}</span>`).join("")}</div>${team(m.b, lost > won, true)}</div>
       </div>`;
     }).join("");
     box.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => { pendingDelete = b.dataset.del; renderHistory(compute()); }));

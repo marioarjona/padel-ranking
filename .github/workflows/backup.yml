@@ -1,0 +1,33 @@
+name: Copia de seguridad diaria
+
+on:
+  schedule:
+    - cron: "0 23 * * *" # cada noche (00:00-01:00 en España)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datos
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/backup.mjs
+      - name: Guardar la copia en el repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add backups
+          if git diff --cached --quiet; then
+            echo "Nada que guardar."
+          else
+            git commit -m "Copia de seguridad $(TZ=Europe/Madrid date +%F)"
+            git push
+          fi
