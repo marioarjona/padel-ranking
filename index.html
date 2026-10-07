@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ranking del Pádel</title>
+<title>Indra Pádel</title>
 <meta name="description" content="Ranking Elo individual, tier list y sorteo de partidos nivelados del grupo de pádel.">
 <meta name="theme-color" content="#174a7e">
 <link rel="manifest" href="manifest.webmanifest">
@@ -11,9 +11,9 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Pádel">
+<meta name="apple-mobile-web-app-title" content="Indra Pádel">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Ranking del Pádel">
+<meta property="og:title" content="Indra Pádel">
 <meta property="og:description" content="Apunta los resultados, sortea partidos nivelados y mira quién manda en la tier list.">
 <meta property="og:url" content="https://marioarjona.github.io/padel-ranking/">
 <meta property="og:image" content="https://marioarjona.github.io/padel-ranking/og.png">
@@ -208,7 +208,7 @@ details.how ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; 
 
 <header class="court">
   <div class="head-inner">
-    <h1>Ranking del Pádel<span class="ball" aria-hidden="true"></span></h1>
+    <h1>Indra Pádel<span class="ball" aria-hidden="true"></span></h1>
     <div class="head-meta"><strong id="hdrStats">—</strong><span id="hdrSub">Cargando…</span></div>
   </div>
 </header>
@@ -228,7 +228,7 @@ details.how ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; 
   <div id="modeBanner" class="banner" hidden style="margin-top:16px"></div>
 
   <section class="panel" id="p-ranking">
-    <div><h2>Clasificación</h2><p class="sub">Toca un nombre para ver su evolución y con quién gana más.</p></div>
+    <div class="row" style="align-items:end"><div style="flex:1 1 260px"><h2>Clasificación</h2><p class="sub">Toca un nombre para ver su evolución y con quién gana más.</p></div><div style="flex:0 0 auto"><button class="btn" type="button" id="newPlayerBtn">+ Nuevo jugador</button></div></div>
     <div id="rankingBox"></div>
     <details class="how box">
       <summary>¿Cómo se calculan los puntos?</summary>
@@ -777,6 +777,7 @@ import { firebaseConfig } from "./firebase-config.js";
     }));
     $("redrawBtn").addEventListener("click", generateDraw);
   }
+  $("newPlayerBtn").addEventListener("click", () => { setTab("jugadores"); $("fName").focus(); });
   $("drawBtn").addEventListener("click", generateDraw);
   $("drawAll").addEventListener("click", () => { players.forEach((p) => drawSel.add(p.id)); renderDraw(compute()); });
   $("drawNone").addEventListener("click", () => { drawSel.clear(); renderDraw(compute()); });

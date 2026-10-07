@@ -1,7 +1,7 @@
 {
-  "name": "Ranking del Pádel",
-  "short_name": "Pádel",
-  "description": "Ranking Elo individual, tier list y sorteo de partidos nivelados del grupo de pádel.",
+  "name": "Indra Pádel",
+  "short_name": "Indra Pádel",
+  "description": "Ranking Elo individual, tier list y sorteo de partidos nivelados del grupo Indra Pádel.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

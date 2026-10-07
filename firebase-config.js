@@ -1,11 +1,10 @@
-// Pega aquí la configuración de tu proyecto de Firebase
-// (Consola de Firebase → Configuración del proyecto → Tus apps → App web → SDK de Firebase → Config).
+// Configuración del proyecto de Firebase "Indra Padel".
 // Estos valores no son secretos: lo que protege los datos son las reglas de firestore.rules.
 export const firebaseConfig = {
-  apiKey: "PEGA_AQUI_TU_API_KEY",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyCEF-i1vsy_qn4-dd2HuVz0O7JhBGFQ3v4",
+  authDomain: "indra-padel.firebaseapp.com",
+  projectId: "indra-padel",
+  storageBucket: "indra-padel.firebasestorage.app",
+  messagingSenderId: "697657324189",
+  appId: "1:697657324189:web:003a04697a13a3fe7c5a74",
 };

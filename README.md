@@ -1,4 +1,4 @@
-# Ranking del Pádel
+# Indra Pádel
 
 App para llevar el ranking Elo individual del grupo de pádel: se apuntan los sets de cada partido,
 se sortean partidos nivelados y se genera la tier list. Los datos se guardan en Firebase (Firestore),
