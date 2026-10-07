@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    function validSet(s) {
+      return s is map && s.keys().hasOnly(['a', 'b'])
+        && s.a is int && s.b is int
+        && s.a >= 0 && s.a <= 9 && s.b >= 0 && s.b <= 9 && s.a != s.b;
+    }
+
+    match /players/{playerId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['name', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 30;
+      allow delete: if signedIn();
+      allow update: if false;
+    }
+
+    match /matches/{matchId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['date', 'a', 'b', 'sets', 'createdAt'])
+        && request.resource.data.date is string
+        && request.resource.data.a is list && request.resource.data.a.size() == 2
+        && request.resource.data.b is list && request.resource.data.b.size() == 2
+        && request.resource.data.sets is list
+        && request.resource.data.sets.size() >= 1 && request.resource.data.sets.size() <= 3
+        && validSet(request.resource.data.sets[0])
+        && (request.resource.data.sets.size() < 2 || validSet(request.resource.data.sets[1]))
+        && (request.resource.data.sets.size() < 3 || validSet(request.resource.data.sets[2]));
+      allow delete: if signedIn();
+      allow update: if false;
+    }
+  }
+}
