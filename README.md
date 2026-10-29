@@ -36,6 +36,7 @@ Abre la web, ve a **Jugadores** y añade al grupo. Después pasa el enlace por e
 - La fuerza de una pareja es la media de sus dos jugadores. Ganar a una pareja más fuerte da más puntos;
   perder contra una más floja resta más.
 - La diferencia de juegos multiplica: un 6-0 vale el doble que un 7-6.
+- Un set empatado (por ejemplo 5-5 cuando se acaba el tiempo) cuenta como medio set ganado para cada pareja. Un partido puede acabar en empate.
 - Fórmula: `Δ = 32 × (1 + dif_juegos/6) × (resultado − esperado)`, con
   `esperado = 1 / (1 + 10^((media_rival − media_propia)/400))`.
 - Con menos de 6 sets jugados, el jugador sale como *provisional*.

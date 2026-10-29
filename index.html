@@ -268,7 +268,7 @@ details.how ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; 
   </section>
 
   <section class="panel" id="p-nuevo" hidden>
-    <div><h2>Nuevo resultado</h2><p class="sub">Elige las dos parejas y apunta los juegos de cada set. Si un set no se terminó, déjalo en blanco.</p></div>
+    <div><h2>Nuevo resultado</h2><p class="sub">Elige las dos parejas y apunta los juegos de cada set. Si un set no se terminó, apunta cómo iba (por ejemplo 5-5) o déjalo en blanco.</p></div>
     <form id="matchForm" class="box" style="display:flex;flex-direction:column;gap:18px" novalidate>
       <div class="row">
         <div><label for="fDate">Fecha</label><input type="date" id="fDate" required></div>
@@ -342,22 +342,23 @@ import { firebaseConfig } from "./firebase-config.js";
   const today = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
   const fmtDate = (s) => { if (!s) return ""; const [y, m, d] = s.split("-"); return `${d}/${m}/${y}`; };
   const sign = (n) => (n > 0 ? "+" : n < 0 ? "−" : "±") + Math.abs(Math.round(n));
+  const fmtHalf = (n) => String(n).replace(".", ",");
   const cls = (n) => (Math.round(n) > 0 ? "up" : Math.round(n) < 0 ? "down" : "flat");
 
   // ---------- Elo ----------
   function validSet(s) {
     if (!Array.isArray(s) || s.length !== 2) return false;
     const [a, b] = s;
-    return Number.isInteger(a) && Number.isInteger(b) && a >= 0 && b >= 0 && a <= 9 && b <= 9 && a !== b;
+    return Number.isInteger(a) && Number.isInteger(b) && a >= 0 && b >= 0 && a <= 9 && b <= 9 && a + b > 0;
   }
   function setDelta(ra, rb, ga, gb) {
     const E = 1 / (1 + Math.pow(10, (rb - ra) / 400));
-    const R = ga > gb ? 1 : 0;
+    const R = ga > gb ? 1 : ga < gb ? 0 : 0.5;
     const M = 1 + Math.min(Math.abs(ga - gb), 6) / 6;
     return K * M * (R - E);
   }
   function blank(id, name) {
-    return { id, name, r: START, sw: 0, sl: 0, gf: 0, ga: 0, mp: 0, hist: [START], last: null, partners: {} };
+    return { id, name, r: START, sw: 0, sl: 0, se: 0, gf: 0, ga: 0, mp: 0, hist: [START], last: null, partners: {} };
   }
   function sortMatches(list) {
     return [...list].sort((x, y) => (x.date || "").localeCompare(y.date || "") || (x.createdAt || 0) - (y.createdAt || 0));
@@ -372,14 +373,16 @@ import { firebaseConfig } from "./firebase-config.js";
       const ra = (st[m.a[0]].r + st[m.a[1]].r) / 2;
       const rb = (st[m.b[0]].r + st[m.b[1]].r) / 2;
       const d = setDelta(ra, rb, ga, gb);
-      const aWon = ga > gb;
-      m.a.forEach((i) => { st[i].r += d; st[i].gf += ga; st[i].ga += gb; aWon ? st[i].sw++ : st[i].sl++; });
-      m.b.forEach((i) => { st[i].r -= d; st[i].gf += gb; st[i].ga += ga; aWon ? st[i].sl++ : st[i].sw++; });
-      [[m.a, aWon], [m.b, !aWon]].forEach(([pair, won]) => {
+      // resultado del set para la pareja A: 1 gana, 0.5 empate, 0 pierde
+      const ra1 = ga > gb ? 1 : ga < gb ? 0 : 0.5;
+      const tally = (i, res) => { if (res === 1) st[i].sw++; else if (res === 0) st[i].sl++; else st[i].se++; };
+      m.a.forEach((i) => { st[i].r += d; st[i].gf += ga; st[i].ga += gb; tally(i, ra1); });
+      m.b.forEach((i) => { st[i].r -= d; st[i].gf += gb; st[i].ga += ga; tally(i, 1 - ra1); });
+      [[m.a, ra1], [m.b, 1 - ra1]].forEach(([pair, res]) => {
         const [p, q] = pair;
         [[p, q], [q, p]].forEach(([x, y]) => {
           const ps = st[x].partners[y] || (st[x].partners[y] = { p: 0, w: 0 });
-          ps.p++; if (won) ps.w++;
+          ps.p++; ps.w += res;
         });
       });
     }
@@ -393,8 +396,8 @@ import { firebaseConfig } from "./firebase-config.js";
     const sorted = sortMatches(matches);
     const deltas = {};
     sorted.forEach((m) => (deltas[m.id] = applyMatch(st, m)));
-    const ranked = players.map((p) => st[p.id]).filter((s) => s.sw + s.sl > 0).sort((a, b) => b.r - a.r);
-    const unplayed = players.map((p) => st[p.id]).filter((s) => s.sw + s.sl === 0);
+    const ranked = players.map((p) => st[p.id]).filter((s) => s.sw + s.sl + s.se > 0).sort((a, b) => b.r - a.r);
+    const unplayed = players.map((p) => st[p.id]).filter((s) => s.sw + s.sl + s.se === 0);
     const n = ranked.length;
     ranked.forEach((s, i) => {
       s.pos = i + 1;
@@ -529,8 +532,9 @@ import { firebaseConfig } from "./firebase-config.js";
       return;
     }
     const rows = [...c.ranked, ...c.unplayed].map((s) => {
-      const played = s.sw + s.sl;
-      const pct = played ? Math.round((s.sw / played) * 100) + "%" : "—";
+      const played = s.sw + s.sl + s.se;
+      const pct = played ? Math.round(((s.sw + s.se / 2) / played) * 100) + "%" : "—";
+      const record = `${s.sw}–${s.sl}${s.se ? ` <span class="prov">+${s.se} emp.</span>` : ""}`;
       const gd = s.gf - s.ga;
       let html = `<tr>
         <td class="pos">${s.pos || "–"}</td>
@@ -538,7 +542,7 @@ import { firebaseConfig } from "./firebase-config.js";
         <td><button class="pname" data-detail="${esc(s.id)}" aria-expanded="${openDetail === s.id}">${esc(s.name)}</button>${played && played < PROVISIONAL ? '<span class="prov">provisional</span>' : ""}</td>
         <td class="num elo">${Math.round(s.r)}</td>
         <td class="num ${s.last == null ? "flat" : cls(s.last)}">${s.last == null ? "—" : sign(s.last)}</td>
-        <td class="num">${s.sw}–${s.sl}</td>
+        <td class="num">${record}</td>
         <td class="num hide-sm">${pct}</td>
         <td class="num hide-sm ${cls(gd)}">${played ? sign(gd) : "—"}</td>
       </tr>`;
@@ -550,11 +554,11 @@ import { firebaseConfig } from "./firebase-config.js";
         html += `<tr class="detail"><td colspan="8"><div class="detail-grid">
           <div>${sparkline(s.hist) || '<span class="sub">Todavía no hay evolución que mostrar.</span>'}</div>
           <div class="facts">
-            <div><span>Partidos:</span> ${s.mp} · <span>sets:</span> ${s.sw}–${s.sl} (${pct})</div>
+            <div><span>Partidos:</span> ${s.mp} · <span>sets:</span> ${record} (${pct})</div>
             <div><span>Juegos:</span> ${s.gf} a favor, ${s.ga} en contra</div>
             <div><span>Mejor puntuación:</span> ${Math.round(peak)}</div>
-            <div><span>Mejor compañero:</span> ${best ? `${esc(nameOf(c.st, best.id))} (${best.w}/${best.p} sets)` : "—"}</div>
-            ${worst && best && worst.id !== best.id ? `<div><span>Peor química:</span> ${esc(nameOf(c.st, worst.id))} (${worst.w}/${worst.p} sets)</div>` : ""}
+            <div><span>Mejor compañero:</span> ${best ? `${esc(nameOf(c.st, best.id))} (${fmtHalf(best.w)}/${best.p} sets)` : "—"}</div>
+            ${worst && best && worst.id !== best.id ? `<div><span>Peor química:</span> ${esc(nameOf(c.st, worst.id))} (${fmtHalf(worst.w)}/${worst.p} sets)</div>` : ""}
           </div></div></td></tr>`;
       }
       return html;
@@ -614,7 +618,7 @@ import { firebaseConfig } from "./firebase-config.js";
     if (!a1 || !a2 || !b1 || !b2) err = "Elige los cuatro jugadores.";
     else if (new Set([a1, a2, b1, b2]).size < 4) err = "Un jugador no puede estar dos veces.";
     else if (!sets.length) err = "Apunta al menos un set.";
-    else if (sets.some((s) => !validSet(s))) err = "Revisa los sets: cada uno necesita dos números distintos entre 0 y 9.";
+    else if (sets.some((s) => !validSet(s))) err = "Revisa los sets: cada uno necesita dos números entre 0 y 9 (se puede empatar, por ejemplo 5-5, pero no 0-0).";
     return { a: [a1, a2], b: [b1, b2], sets, date: $("fDate").value || today(), err };
   }
   function updatePreview(c) {
@@ -650,7 +654,7 @@ import { firebaseConfig } from "./firebase-config.js";
     if (!c.sorted.length) { box.innerHTML = `<div class="box empty"><strong>Sin partidos</strong>Los resultados que apuntéis aparecerán aquí, del más reciente al más antiguo.</div>`; return; }
     box.innerHTML = [...c.sorted].reverse().map((m) => {
       const won = m.sets.filter(validSet).filter((s) => s[0] > s[1]).length;
-      const lost = m.sets.filter(validSet).length - won;
+      const lost = m.sets.filter(validSet).filter((s) => s[0] < s[1]).length;
       const d = c.deltas[m.id] || {};
       const team = (pair, isWin, right) => `<div class="team${isWin ? " won" : ""}${right ? " right" : ""}">${pair.map((id) =>
         `<div class="who"><span class="nm">${esc(nameOf(c.st, id))}</span><span class="dl ${cls(d[id] || 0)}">${sign(d[id] || 0)}</span></div>`).join("")}</div>`;
@@ -658,7 +662,7 @@ import { firebaseConfig } from "./firebase-config.js";
         ? `<span class="confirm">¿Borrar este partido? <button class="btn small danger" data-del-yes="${esc(m.id)}">Sí, borrar</button><button class="btn small ghost" data-del-no>No</button></span>`
         : `<button class="btn small ghost" data-del="${esc(m.id)}">Borrar</button>`;
       return `<div class="box match">
-        <div class="match-top"><span>${esc(fmtDate(m.date))}</span>${del}</div>
+        <div class="match-top"><span>${esc(fmtDate(m.date))}${won === lost ? ' · <b>Empate</b>' : ""}</span>${del}</div>
         <div class="match-teams">${team(m.a, won > lost, false)}<div class="setchips">${m.sets.map((s) => `<span>${esc(s[0])}-${esc(s[1])}</span>`).join("")}</div>${team(m.b, lost > won, true)}</div>
       </div>`;
     }).join("");
